@@ -14,6 +14,9 @@ use Carbon\Carbon;
 class Accounting
 {
 
+    /**
+     * @var IBudgetRepo
+     */
     private $budgetRepo;
     /**
      * @var Carbon
@@ -33,28 +36,31 @@ class Accounting
         $this->budgetRepo = $budgetRepo;
     }
 
+    /**
+     * @param Carbon $start
+     * @param Carbon $end
+     * @return float|int
+     */
     public function totalAmount(Carbon $start, Carbon $end)
     {
+//        new Period($start, $end);
         $this->start = $start;
         $this->end = $end;
         if ($this->invalidDate()) {
             return 0.00;
         }
         $totalBudget = 0;
-        foreach ($this->getBudgetList() as $budget) {
-            $budgetYearMonth = $this->getBudgetYearMonth($budget);
+        foreach ($this->budgetRepo->getAll() as $budget) {
+            $budgetYearMonth = $budget->getBudgetYearMonth();
             if (!$this->isCrossMonth()) {
                 return $budget->getAmount() * ($this->end->diffInDays($this->start) + 1) / $budgetYearMonth->daysInMonth;
             } else {
                 if ($budgetYearMonth->isSameMonth($this->start)) {
-                    $totalBudget += $budget->getAmount() * (($this->start->diffInDays($budgetYearMonth->endOfMonth()) + 1) /
-                            $budgetYearMonth->daysInMonth
-                        );
+                    $overlappingDays = $this->start->diffInDays($budgetYearMonth->endOfMonth()) + 1;
+                    $totalBudget += $budget->getAmount() * $overlappingDays / $budgetYearMonth->daysInMonth;
                 } else if ($budgetYearMonth->isSameMonth($this->end)) {
-                    $endDays = $budgetYearMonth->startOfMonth()->diffInDays($this->end) + 1;
-                    $totalBudget += $budget->getAmount() * ($endDays /
-                            $budgetYearMonth->daysInMonth
-                        );
+                    $overlappingDays = $budgetYearMonth->startOfMonth()->diffInDays($this->end) + 1;
+                    $totalBudget += $budget->getAmount() * $overlappingDays / $budgetYearMonth->daysInMonth;
                 } else if ($this->inRange($budgetYearMonth)) {
                     $totalBudget += $budget->getAmount();
                 }
@@ -65,29 +71,11 @@ class Accounting
     }
 
     /**
-     * @return array|Budget[]
-     */
-    public function getBudgetList(): array
-    {
-        return $this->budgetRepo->getAll();
-    }
-
-    /**
      * @return bool
      */
     private function invalidDate(): bool
     {
         return $this->start->gt($this->end);
-    }
-
-    /**
-     * @param Budget $budget
-     * @return Carbon|\Carbon\CarbonInterface
-     */
-    private function getBudgetYearMonth(Budget $budget)
-    {
-        $budgetYearMonth = Carbon::create(substr($budget->getYearMonth(), 0, 4), substr($budget->getYearMonth(), 4, 2));
-        return $budgetYearMonth;
     }
 
     /**

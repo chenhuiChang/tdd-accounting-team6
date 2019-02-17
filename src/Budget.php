@@ -9,6 +9,8 @@
 namespace App;
 
 
+use Carbon\Carbon;
+
 /**
  * Class Budget
  * @package App
@@ -43,5 +45,13 @@ class Budget
     {
         $this->yearMonth = $date;
         $this->amount = $amount;
+    }
+
+    /**
+     * @return Carbon|\Carbon\CarbonInterface
+     */
+    public function getBudgetYearMonth()
+    {
+        return Carbon::create(substr($this->getYearMonth(), 0, 4), substr($this->getYearMonth(), 4, 2));
     }
 }

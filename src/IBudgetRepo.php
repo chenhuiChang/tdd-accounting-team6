@@ -10,5 +10,8 @@ namespace App;
 
 Interface IBudgetRepo
 {
+    /**
+     * @return Budget[]
+     */
     public function getAll();
 }
