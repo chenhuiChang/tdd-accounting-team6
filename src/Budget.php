@@ -21,14 +21,6 @@ class Budget
     private $amount;
 
     /**
-     * @return string
-     */
-    public function getYearMonth(): string
-    {
-        return $this->yearMonth;
-    }
-
-    /**
      * @return float
      */
     public function getAmount(): float
@@ -52,6 +44,14 @@ class Budget
      */
     public function getBudgetYearMonth()
     {
-        return Carbon::create(substr($this->getYearMonth(), 0, 4), substr($this->getYearMonth(), 4, 2));
+        return Carbon::create(substr($this->yearMonth, 0, 4), substr($this->yearMonth, 4, 2));
+    }
+
+    /**
+     * @return int
+     */
+    public function getBudgetDays(): int
+    {
+        return $this->getBudgetYearMonth()->daysInMonth;
     }
 }

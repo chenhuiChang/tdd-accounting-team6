@@ -19,14 +19,6 @@ class Accounting
      * @var IBudgetRepo
      */
     private $budgetRepo;
-    /**
-     * @var Carbon
-     */
-    private $start;
-    /**
-     * @var Carbon
-     */
-    private $end;
 
     /**
      * Accounting constructor.
@@ -50,16 +42,21 @@ class Accounting
         $totalBudget = 0;
         foreach ($this->budgetRepo->getAll() as $budget) {
             $budgetYearMonth = $budget->getBudgetYearMonth();
-            $budgetDays = $this->getBudgetDays($budget);
             if (!$this->isCrossMonth($start, $end)) {
-                return $budget->getAmount() * ($end->diffInDays($start) + 1) / $budgetDays;
+                return $budget->getAmount()
+                    / $budget->getBudgetDays()
+                    * ($end->diffInDays($start) + 1);
             } else {
                 if ($budgetYearMonth->isSameMonth($start)) {
                     $overlappingDays = $start->diffInDays($budgetYearMonth->endOfMonth()) + 1;
-                    $totalBudget += $budget->getAmount() * $overlappingDays / $budgetDays;
+                    $totalBudget += $budget->getAmount()
+                        / $budget->getBudgetDays()
+                        * $overlappingDays;
                 } else if ($budgetYearMonth->isSameMonth($end)) {
                     $overlappingDays = $budgetYearMonth->startOfMonth()->diffInDays($end) + 1;
-                    $totalBudget += $budget->getAmount() * $overlappingDays / $budgetDays;
+                    $totalBudget += $budget->getAmount()
+                        / $budget->getBudgetDays()
+                        * $overlappingDays;
                 } else {
                     if ($budgetYearMonth->between($start, $end)) {
                         $totalBudget += $budget->getAmount();
@@ -79,16 +76,6 @@ class Accounting
     private function isCrossMonth($start, $end)
     {
         return !$start->isSameMonth($end);
-    }
-
-    /**
-     * @param Budget $budget
-     * @return int
-     */
-    private function getBudgetDays(Budget $budget): int
-    {
-        $budgetDays = $budget->getBudgetYearMonth()->daysInMonth;
-        return $budgetDays;
     }
 
 }
