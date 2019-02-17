@@ -42,28 +42,20 @@ class Accounting
         $totalBudget = 0;
         foreach ($this->budgetRepo->getAll() as $budget) {
             $budgetYearMonth = $budget->getBudgetYearMonth();
-            if (!$this->isCrossMonth($start, $end)) {
-                return $budget->getAmount()
-                    / $budget->getBudgetDays()
-                    * ($end->diffInDays($start) + 1);
-            } else {
+            if ($this->isCrossMonth($start, $end)) {
                 if ($budgetYearMonth->isSameMonth($start)) {
                     $overlappingDays = $start->diffInDays($budgetYearMonth->endOfMonth()) + 1;
-                    $totalBudget += $budget->getAmount()
-                        / $budget->getBudgetDays()
-                        * $overlappingDays;
                 } else if ($budgetYearMonth->isSameMonth($end)) {
                     $overlappingDays = $budgetYearMonth->startOfMonth()->diffInDays($end) + 1;
-                    $totalBudget += $budget->getAmount()
-                        / $budget->getBudgetDays()
-                        * $overlappingDays;
+                } else if ($budgetYearMonth->between($start, $end)) {
+                    $overlappingDays = $budgetYearMonth->daysInMonth;
                 } else {
-                    if ($budgetYearMonth->between($start, $end)) {
-                        $totalBudget += $budget->getAmount();
-                    }
+                    $overlappingDays = 0;
                 }
+            } else {
+                $overlappingDays = $end->diffInDays($start) + 1;
             }
-
+            $totalBudget += $budget->getDailyAmount() * $overlappingDays;
         }
         return $totalBudget;
     }

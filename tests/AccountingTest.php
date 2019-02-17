@@ -124,7 +124,7 @@ class AccountingTest extends TestCase
     protected function setUp()
     {
         parent::setUp();
-        $this->budgetRepo = \Mockery::mock(IBudgetRepo::class);
+        $this->budgetRepo = \Mockery::spy(IBudgetRepo::class);
     }
 
     private function budgetShouldBe($expected): void

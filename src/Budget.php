@@ -50,8 +50,16 @@ class Budget
     /**
      * @return int
      */
-    public function getBudgetDays(): int
+    public function days(): int
     {
         return $this->getBudgetYearMonth()->daysInMonth;
+    }
+
+    /**
+     * @return float|int
+     */
+    public function getDailyAmount()
+    {
+        return $this->getAmount() / $this->days();
     }
 }
