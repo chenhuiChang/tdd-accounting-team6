@@ -10,6 +10,7 @@ namespace App;
 
 
 use Carbon\Carbon;
+use function substr;
 
 class Accounting
 {
@@ -43,26 +44,26 @@ class Accounting
      */
     public function totalAmount(Carbon $start, Carbon $end)
     {
-//        new Period($start, $end);
-        $this->start = $start;
-        $this->end = $end;
-        if ($this->invalidDate()) {
+        if ($start->gt($end)) {
             return 0.00;
         }
         $totalBudget = 0;
         foreach ($this->budgetRepo->getAll() as $budget) {
             $budgetYearMonth = $budget->getBudgetYearMonth();
-            if (!$this->isCrossMonth()) {
-                return $budget->getAmount() * ($this->end->diffInDays($this->start) + 1) / $budgetYearMonth->daysInMonth;
+            $budgetDays = $this->getBudgetDays($budget);
+            if (!$this->isCrossMonth($start, $end)) {
+                return $budget->getAmount() * ($end->diffInDays($start) + 1) / $budgetDays;
             } else {
-                if ($budgetYearMonth->isSameMonth($this->start)) {
-                    $overlappingDays = $this->start->diffInDays($budgetYearMonth->endOfMonth()) + 1;
-                    $totalBudget += $budget->getAmount() * $overlappingDays / $budgetYearMonth->daysInMonth;
-                } else if ($budgetYearMonth->isSameMonth($this->end)) {
-                    $overlappingDays = $budgetYearMonth->startOfMonth()->diffInDays($this->end) + 1;
-                    $totalBudget += $budget->getAmount() * $overlappingDays / $budgetYearMonth->daysInMonth;
-                } else if ($this->inRange($budgetYearMonth)) {
-                    $totalBudget += $budget->getAmount();
+                if ($budgetYearMonth->isSameMonth($start)) {
+                    $overlappingDays = $start->diffInDays($budgetYearMonth->endOfMonth()) + 1;
+                    $totalBudget += $budget->getAmount() * $overlappingDays / $budgetDays;
+                } else if ($budgetYearMonth->isSameMonth($end)) {
+                    $overlappingDays = $budgetYearMonth->startOfMonth()->diffInDays($end) + 1;
+                    $totalBudget += $budget->getAmount() * $overlappingDays / $budgetDays;
+                } else {
+                    if ($budgetYearMonth->between($start, $end)) {
+                        $totalBudget += $budget->getAmount();
+                    }
                 }
             }
 
@@ -71,27 +72,23 @@ class Accounting
     }
 
     /**
-     * @return bool
+     * @param Carbon $start
+     * @param Carbon $end
+     * @return mixed
      */
-    private function invalidDate(): bool
+    private function isCrossMonth($start, $end)
     {
-        return $this->start->gt($this->end);
+        return !$start->isSameMonth($end);
     }
 
     /**
-     * @return mixed
+     * @param Budget $budget
+     * @return int
      */
-    private function isCrossMonth()
+    private function getBudgetDays(Budget $budget): int
     {
-        return !$this->start->isSameMonth($this->end);
+        $budgetDays = $budget->getBudgetYearMonth()->daysInMonth;
+        return $budgetDays;
     }
 
-    /**
-     * @param $budgetYearMonth
-     * @return mixed
-     */
-    private function inRange($budgetYearMonth)
-    {
-        return $budgetYearMonth->between($this->start, $this->end);
-    }
 }
