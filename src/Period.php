@@ -43,7 +43,15 @@ class Period
      */
     public function isCrossMonth(): bool
     {
-        return !$this->start->isSameMonth($this->end);
+        return !$this->isSameMonth();
+    }
+
+    /*
+      * @return bool
+      */
+    public function isSameMonth(): bool
+    {
+        return $this->start->isSameMonth($this->end);
     }
 
     /**
@@ -51,6 +59,6 @@ class Period
      */
     public function days(): int
     {
-        return $this->end->diffInDays($this->start)+1;
+        return $this->end->diffInDays($this->start) + 1;
     }
 }
