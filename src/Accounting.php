@@ -36,38 +36,44 @@ class Accounting
      */
     public function totalAmount(Carbon $start, Carbon $end)
     {
-        if ($start->gt($end)) {
+        $period = new Period($start, $end);
+        if ($period->start()->gt($period->end())) {
             return 0.00;
         }
         $totalBudget = 0;
         foreach ($this->budgetRepo->getAll() as $budget) {
-            $budgetYearMonth = $budget->getBudgetYearMonth();
-            if ($this->isCrossMonth($start, $end)) {
-                if ($budgetYearMonth->isSameMonth($start)) {
-                    $overlappingDays = $start->diffInDays($budgetYearMonth->endOfMonth()) + 1;
-                } else if ($budgetYearMonth->isSameMonth($end)) {
-                    $overlappingDays = $budgetYearMonth->startOfMonth()->diffInDays($end) + 1;
-                } else if ($budgetYearMonth->between($start, $end)) {
-                    $overlappingDays = $budgetYearMonth->daysInMonth;
+            if ($period->isCrossMonth()) {
+                if ($budget->start()->isAfter($period->end())) {
+                    $totalBudget += 0;
+                } else if ($budget->end()->isBefore($period->start())) {
+                    $totalBudget += 0;
+                } else if ($budget->start()->isBefore($period->start())) {
+                    $overlappingStart = $period->start();
+                    $overlappingEnd = $period->end();
+//                    $totalBudget += $budget->dailyAmount() * ($overlappingEnd->diffInDays($overlappingStart));
+                    $overlappingDays = $budget->end()->diffInDays($period->start()) + 1;
+                    $totalBudget += $budget->dailyAmount() * $overlappingDays;
+                } else if ($budget->end()->isAfter($period->end())) {
+                    $overlappingStart = $budget->start();
+                    $overlappingEnd = $period->end();
+                    $totalBudget += $budget->dailyAmount() * ($overlappingEnd->diffInDays($overlappingStart) + 1);
+//                    $overlappingDays = $budget->start()->diffInDays($period->end()) + 1;
+//                    $totalBudget += $budget->dailyAmount() * $overlappingDays;
+                } else if ($budget->start()->isAfter($period->start()) && $budget->end()->isBefore($period->end())) {
+                    $overlappingStart = $budget->start();
+                    $overlappingEnd = $budget->end();
+                    $totalBudget += $budget->dailyAmount() * ($overlappingEnd->diffInDays($overlappingStart) + 1);
+//                    $overlappingDays = $budget->yearMonth()->daysInMonth;
+//                    $totalBudget += $budget->dailyAmount() * $overlappingDays;
                 } else {
-                    $overlappingDays = 0;
+                    $totalBudget += 0;
                 }
             } else {
-                $overlappingDays = $end->diffInDays($start) + 1;
+                $overlappingDays = $period->days();
+                $totalBudget += $budget->dailyAmount() * $overlappingDays;
             }
-            $totalBudget += $budget->getDailyAmount() * $overlappingDays;
         }
         return $totalBudget;
-    }
-
-    /**
-     * @param Carbon $start
-     * @param Carbon $end
-     * @return mixed
-     */
-    private function isCrossMonth($start, $end)
-    {
-        return !$start->isSameMonth($end);
     }
 
 }

@@ -21,14 +21,6 @@ class Budget
     private $amount;
 
     /**
-     * @return float
-     */
-    public function getAmount(): float
-    {
-        return $this->amount;
-    }
-
-    /**
      * Budget constructor.
      * @param string $date
      * @param float $amount
@@ -42,7 +34,7 @@ class Budget
     /**
      * @return Carbon|\Carbon\CarbonInterface
      */
-    public function getBudgetYearMonth()
+    public function yearMonth()
     {
         return Carbon::create(substr($this->yearMonth, 0, 4), substr($this->yearMonth, 4, 2));
     }
@@ -52,14 +44,30 @@ class Budget
      */
     public function days(): int
     {
-        return $this->getBudgetYearMonth()->daysInMonth;
+        return $this->yearMonth()->daysInMonth;
     }
 
     /**
      * @return float|int
      */
-    public function getDailyAmount()
+    public function dailyAmount()
     {
-        return $this->getAmount() / $this->days();
+        return $this->amount / $this->days();
+    }
+
+    /**
+     * @return Carbon|\Carbon\CarbonInterface
+     */
+    public function start()
+    {
+        return $this->yearMonth()->startOfMonth();
+    }
+
+    /**
+     * @return Carbon|\Carbon\CarbonInterface
+     */
+    public function end()
+    {
+        return $this->yearMonth()->endOfMonth();
     }
 }
